@@ -1,26 +1,24 @@
 package com.rv.microservices.order;
 
+import com.rv.microservices.order.stub.InventoryStubs;
 import io.restassured.RestAssured;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.testcontainers.containers.MySQLContainer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWireMock(port = 0)
 class OrderServiceApplicationTests {
 
-	private static final Logger logger = LoggerFactory.getLogger(OrderServiceApplicationTests.class);
-
 	@ServiceConnection
-	static MySQLContainer<?> mySQLContainer = new MySQLContainer<>("mysql:8.0.26");
-
+	static MySQLContainer mySQLContainer = new MySQLContainer("mysql:8.3.0");
 	@LocalServerPort
 	private Integer port;
 
@@ -31,12 +29,7 @@ class OrderServiceApplicationTests {
 	}
 
 	static {
-		try {
-			mySQLContainer.start();
-			logger.info("MySQL container started with JDBC URL: {}", mySQLContainer.getJdbcUrl());
-		} catch (Exception e) {
-			logger.error("Failed to start MySQL container", e);
-		}
+		mySQLContainer.start();
 	}
 
 	@Test
@@ -49,7 +42,7 @@ class OrderServiceApplicationTests {
                 }
                 """;
 
-
+		InventoryStubs.stubInventoryCall("iphone_15", 1);
 		var responseBodyString = RestAssured.given()
 				.contentType("application/json")
 				.body(submitOrderJson)
